@@ -12,6 +12,9 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      APP_PORT: ${APP_PORT}
+    ports:
+      - "127.0.0.1:${APP_PUBLISHED_PORT:-8080}:${APP_PORT:-8080}"
     volumes:
       - .:/app
       - go-mod-cache:/go/pkg/mod
