@@ -61,9 +61,20 @@ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap .
 - **ハンドラは `error` を返さず `nil` を返す。** エラーを返すと部分バッチレスポンスが無視され、バッチ全体が再配信されて二重送信になる。`ReportBatchItemFailures` を有効にし、失敗したメッセージ ID のみ `BatchItemFailures` に入れる。
 - 可視性タイムアウトは関数タイムアウトの6倍を目安に長く取る。
 - DLQ は**キュー側**に `maxReceiveCount` 付きで設定する（Lambda の `onFailure` とは別の仕組み）。
-- 1件あたりの処理順: 冪等性チェック（`INSERT ... ON CONFLICT DO NOTHING` で「送信中」レコード、既存なら即 return）→ 本文整形 → SES 送信 → `MessageId` 保存 → 送信済みに更新。
+- 1件あたりの処理順: 冪等性チェック（`INSERT ... ON DUPLICATE KEY UPDATE` で「送信中」レコード、既存なら即 return）→ 本文整形 → SES 送信 → `MessageId` 保存 → 送信済みに更新。
+- 冪等性の挿入は `INSERT ... ON DUPLICATE KEY UPDATE notification_id = notification_id` とし、`RowsAffected() == 1` を挿入成功の判定に使う。`INSERT IGNORE` は NOT NULL 違反やデータ切り詰めまで警告に格下げして黙って通すため使わない。
 
-### DB 接続（RDS Proxy は現時点で不採用）
+### DB（MySQL 8.4 LTS / RDS Proxy は現時点で不採用）
+
+**バージョンは MySQL 8.4 LTS の 8.4.10 を使用する。** ローカルの Docker イメージ、IaC のエンジンバージョン指定、CI のサービスコンテナすべてで揃えること。
+
+- **8.0 を選ばない。** RDS for MySQL 8.0 は標準サポートが 2026年7月31日に終了済みで、新規構築しても Extended Support（vCPU 時間あたりの追加課金）の対象になる。コミュニティ側も 2026年4月30日に終息しており新しいマイナーバージョンは出ない。
+- **9系も選ばない。** 次期 LTS の 9.7（2026年4月 GA）は RDS では Database Preview 環境のみの提供で、本番利用が禁じられている（インスタンスが作成から60日で自動削除される、RDS Proxy が使えない、サポート対象外）。RDS で一般提供され次第、Blue/Green デプロイでの移行を検討する。
+- 8.4 の RDS 標準サポート終了は 2029年7月31日、Extended Support 終了は 2032年7月31日。
+- 文字セットは `utf8mb4`、照合順序は `utf8mb4_0900_ai_ci`。ストレージエンジンは InnoDB（外部キー制約を使うため MyISAM は不可）。
+- テーブル定義は `heavy-weather-db-schema.md` を参照する。
+
+接続の扱い:
 
 - `sql.DB` はパッケージレベル変数として保持する（`sql.DB` 自体がコネクションプール）。
 - `SetMaxOpenConns` を小さく設定する。

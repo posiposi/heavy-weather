@@ -108,7 +108,8 @@ type UserQueryRepository interface {
 
 ```go
 type NotificationCommandRepository interface {
-    // 冪等性レコードの登録。既存なら inserted=false を返す（INSERT ... ON CONFLICT DO NOTHING）
+    // 冪等性レコードの登録。既存なら inserted=false を返す
+    // MySQL では INSERT ... ON DUPLICATE KEY UPDATE で自己代入し、RowsAffected() == 1 を挿入成功と判定する
     TryInsertSending(ctx context.Context, id NotificationID, ch Channel) (inserted bool, err error)
     MarkSent(ctx context.Context, id NotificationID, ch Channel, messageID string) error
 }
