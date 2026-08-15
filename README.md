@@ -58,6 +58,51 @@
 - **役割を分けてもロジックは共有する。** 分かれるのは入口だけで、その内側は共通のコードを参照する
 - **アプリケーションとインフラ定義を同じリポジトリに置く。** この規模では両者が同時に変わることが多く、分けると変更が分断される
 
+## ローカル開発環境
+
+Go と MySQL を `docker compose` で立ち上げる。ホストに Go や MySQL を入れる必要はない。
+
+| 用途 | イメージ |
+|---|---|
+| Go | `golang:1.26.6-bookworm` |
+| MySQL | `mysql:8.4.10` |
+
+Go は alpine ではなく Debian ベース（bookworm）を使う。alpine は musl libc であり、本番の Lambda ランタイム `provided.al2023`（glibc）と揃わないため、切り分けの難しい差異が生まれる。
+
+### 起動
+
+```sh
+cp .env.example .env
+docker compose up -d
+```
+
+`db` のヘルスチェックが healthy になるまで `app` は起動を待つ。初回はイメージの取得と MySQL の初期化で数十秒かかる。
+
+### 使い方
+
+```sh
+docker compose exec app go test ./...   # テスト
+docker compose exec app go build ./...  # ビルド
+docker compose exec app go vet ./...    # lint
+# DB に接続（パスワードはコンテナ内のシェルで展開させる）
+docker compose exec db sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+```
+
+モジュールキャッシュ（`/go/pkg/mod`）とビルドキャッシュは名前付きボリュームに置いてあるため、コンテナを作り直しても再ダウンロード・再ビルドは発生しない。MySQL のデータも同様に永続化される。
+
+### 停止・破棄
+
+```sh
+docker compose down     # 停止（データは残る）
+docker compose down -v  # ボリュームごと破棄（DB を初期状態に戻す）
+```
+
+### 接続情報
+
+`.env` で渡す。`.env` は Git 管理外なので、各自 `.env.example` からコピーして使う。ホストの 3306 が埋まっている場合は `DB_PUBLISHED_PORT` を変更する。公開先は `127.0.0.1` に限定してあるため、同一ネットワークの他端末からは接続できない。
+
+MySQL の文字セット・タイムゾーン・`wait_timeout` は `docker/mysql/conf.d/my.cnf` で明示している。タイムゾーンを UTC 固定にしているのは、Lambda の実行環境が既定で UTC であり、ローカルだけ JST だと時刻の扱いの誤りが表面化しないため。
+
 ## ドキュメント
 
 | ファイル | 内容 |

@@ -4,9 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## リポジトリの現状
 
-**まだ実装コードが存在しない。** 現時点のリポジトリは `heavy-weather-architecture.md`（設計書）のみで構成される。実装を始める際は、この設計書が唯一の真実の源であり、以下の記述はそこからの要約である。判断に迷う場合は設計書の該当セクションを参照すること。
+**ローカル開発環境（Docker）と Go モジュールのみが存在する。** ドメインロジック以降は未実装で、`internal/domain` はパッケージ宣言だけの状態（設計書 §9 第1段階で実体を入れる）。`heavy-weather-architecture.md`（設計書）が唯一の真実の源であり、以下の記述はそこからの要約である。判断に迷う場合は設計書の該当セクションを参照すること。
 
 コードを追加した時点で、このファイルの「コマンド」セクションを実際に動くコマンドへ更新すること。
+
+## 開発環境
+
+`docker compose` で Go（`golang:1.26.6-bookworm`）と MySQL（`mysql:8.4.10`）を立ち上げる。ホストに Go を入れずに済む構成であり、テスト・lint・ビルドはコンテナ内で実行する。起動手順は `README.md`「ローカル開発環境」を参照。
+
+```sh
+cp .env.example .env && docker compose up -d
+docker compose exec app go test ./...
+docker compose exec app go vet ./...
+```
+
+Go の alpine イメージは使わない。musl libc であり、本番の Lambda ランタイム `provided.al2023`（glibc）と揃わないため。
 
 ## プロジェクト概要
 
@@ -30,8 +42,11 @@ infra/                  IaC（SAM / CDK / Terraform — 第2段階で選定）
 Lambda 向けバイナリのビルド（`provided.al2023` ランタイム、バイナリ名は `bootstrap` 固定）:
 
 ```sh
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap ./cmd/publisher
+docker compose exec app env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+  go build -tags lambda.norpc -o bootstrap ./cmd/publisher
 ```
+
+**`cmd/` はまだ存在しないため、このコマンドは第2段階でエントリポイントを追加するまで通らない。** 現時点で通るのは `go build ./...` まで。
 
 `arm64` を使う（x86 より安価、Go では移植性の問題がほぼない）。`-tags lambda.norpc` で不要な RPC 依存を除外する。
 

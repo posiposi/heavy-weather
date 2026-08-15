@@ -1,0 +1,54 @@
+name: heavy-weather
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    # db 用の MYSQL_ROOT_PASSWORD まで渡らないよう、env_file ではなく必要な変数だけ列挙する。
+    # 値は同ディレクトリの .env から compose が補間する。
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - .:/app
+      # モジュールキャッシュとビルドキャッシュはコンテナを作り直しても残す。
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4.10
+    env_file:
+      - .env
+    ports:
+      # loopback に限定する。0.0.0.0 で公開すると開発用の弱いパスワードのまま
+      # 同一ネットワークの第三者から到達できてしまう。
+      - "127.0.0.1:${DB_PUBLISHED_PORT:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+    healthcheck:
+      # app が service_healthy で待機するための判定。mysqladmin ping は認証に失敗しても
+      # exit 0 を返す（サーバが応答したかしか見ない）ため、実際にクエリを投げて
+      # 認証とデータベースの存在まで確認する。
+      test:
+        [
+          "CMD-SHELL",
+          'mysql -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" -e "SELECT 1" "$$MYSQL_DATABASE"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
+  db-data:

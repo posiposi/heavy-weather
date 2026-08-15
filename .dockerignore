@@ -1,0 +1,11 @@
+# 開発用 Dockerfile は COPY しないが、将来の本番用マルチステージビルドで
+# COPY . . を書いたときに秘匿情報がレイヤに焼き込まれないよう先に除外しておく。
+.env
+.env.*
+!.env.example
+
+.git
+.github
+.claude
+
+bootstrap
