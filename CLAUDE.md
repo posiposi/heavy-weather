@@ -46,6 +46,7 @@ Go の alpine イメージは使わない。musl libc であり、本番の Lamb
 ```
 cmd/publisher/main.go   発行側 Lambda のエントリポイント
 cmd/sender/main.go      送信側 Lambda のエントリポイント
+cmd/devserver/main.go   ローカル動作確認用 HTTP サーバー（Lambda にはデプロイしない）
 internal/domain/        値オブジェクト、降水判定ロジック
 internal/usecase/       処理の組み立て
 internal/adapter/weather/  天気 API クライアント
