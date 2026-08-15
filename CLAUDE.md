@@ -22,7 +22,7 @@ Go の alpine イメージは使わない。musl libc であり、本番の Lamb
 
 ## コメント方針
 
-**コメントは原則として書かない。** Go・設定ファイル（`compose.yaml` / `Dockerfile` / `my.cnf` / `.env.example` など）を問わず適用する。
+**コメントは原則として書かない。** Go・設定ファイル（`compose.yaml` / `Dockerfile` / `.env.example` など）を問わず適用する。
 
 書いてよいのは以下のみ。
 

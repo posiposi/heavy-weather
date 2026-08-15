@@ -22,13 +22,20 @@ services:
 
   db:
     image: mysql:8.4.10
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+      - --wait-timeout=600
+      - --interactive-timeout=600
+    environment:
+      LANG: C.UTF-8
     env_file:
       - .env
     ports:
       - "127.0.0.1:${DB_PUBLISHED_PORT:-3306}:3306"
     volumes:
       - db-data:/var/lib/mysql
-      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
     healthcheck:
       test:
         [
