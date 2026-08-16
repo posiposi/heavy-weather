@@ -21,6 +21,17 @@ docker compose exec app go test ./...
 docker compose exec app go vet ./...
 ```
 
+マイグレーションは goose（`v3.27.3` 固定）で管理する。CLI は `app` イメージに同梱済み。接続情報は `compose.yaml` の `GOOSE_*` 環境変数で渡しているため、コマンドに DSN を指定しない。
+
+```sh
+docker compose exec app goose -s create <name> sql
+docker compose exec app goose status
+docker compose exec app goose up
+docker compose exec app goose down
+```
+
+採番は `-s` の連番で統一する（タイムスタンプ採番と混在させない）。マイグレーションファイルの配置先は `db/migrations/`。
+
 Go の alpine イメージは使わない。musl libc であり、本番の Lambda ランタイム `provided.al2023`（glibc）と揃わないため。
 
 ## コメント方針
