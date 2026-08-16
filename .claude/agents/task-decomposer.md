@@ -1,7 +1,7 @@
 ---
 name: task-decomposer
 description: GitHub Issueの仕様と調査結果をもとに1コミット粒度の実装タスクに分解する。タスク分解が必要な場合に使用する。
-tools: Read, Glob, Grep, Bash, TaskCreate, TaskUpdate, TaskList, TaskGet
+tools: Read, Glob, Grep, Bash, TaskCreate, TaskUpdate, TaskList, TaskGet, SendMessage, ListAgents
 model: inherit
 skills:
   - task-analysis

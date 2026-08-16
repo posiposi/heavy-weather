@@ -1,7 +1,7 @@
 ---
 name: log-investigator
 description: タスク分解に必要なログ・エラー情報の調査を行う並列実行用エージェント。エラーログ・テスト結果・CI状況を調査する。
-tools: Read, Glob, Grep, Bash, TaskUpdate, TaskGet
+tools: Read, Glob, Grep, Bash, TaskUpdate, TaskGet, SendMessage, ListAgents
 model: haiku
 skills:
   - task-analysis

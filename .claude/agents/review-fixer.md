@@ -1,7 +1,7 @@
 ---
 name: review-fixer
 description: code-reviewerの指摘事項に基づいてコードを修正するエージェント。TDDワークフローとDDD規約に従い、レビュー指摘を解消する。
-tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet
+tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet, SendMessage, ListAgents
 model: inherit
 permissionMode: acceptEdits
 skills:
