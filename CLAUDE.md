@@ -15,7 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `docker compose` で Go（`golang:1.26.6-bookworm`）と MySQL（`mysql:8.4.10`）を立ち上げる。ホストに Go を入れずに済む構成であり、テスト・lint・ビルドはコンテナ内で実行する。起動手順は `README.md`「ローカル開発環境」を参照。
 
 ```sh
-cp .env.example .env && docker compose up -d
+cp .env.example .env   # 値は空なので記入が必要（README 参照）
+docker compose up -d
 docker compose exec app go test ./...
 docker compose exec app go vet ./...
 ```

@@ -73,8 +73,23 @@ Go は alpine ではなく Debian ベース（bookworm）を使う。alpine は 
 
 ```sh
 cp .env.example .env
+# .env に値を記入する（次表を参照）
 docker compose up -d
 ```
+
+`.env.example` はキーのみで値は空にしてある。**空のままでは起動しない**（MySQL がパスワード未設定で起動を拒否し、ポート指定も不正になる）。
+
+| 変数 | 設定する値 |
+|---|---|
+| `MYSQL_ROOT_PASSWORD` | 任意。ローカル専用なので強度は問わない |
+| `MYSQL_DATABASE` | 任意のデータベース名。`heavy_weather` を想定 |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | アプリが使うユーザー。`root` は指定できない |
+| `DB_PUBLISHED_PORT` | ホスト側の MySQL 公開ポート。通常 `3306`。埋まっていれば変更する |
+| `APP_PORT` | `app` コンテナ内で待ち受けるポート。通常 `8080` |
+| `APP_PUBLISHED_PORT` | ホスト側の `app` 公開ポート。通常 `8080` |
+| `DB_HOST` | **`db` 固定**。compose のサービス名であり、他の値では解決できない |
+| `DB_PORT` | **`3306` 固定**。コンテナ間通信のポートで `DB_PUBLISHED_PORT` とは別物 |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` と同じ値 |
 
 `db` のヘルスチェックが healthy になるまで `app` は起動を待つ。初回はイメージの取得と MySQL の初期化で数十秒かかる。
 
@@ -110,7 +125,7 @@ docker compose down -v  # ボリュームごと破棄（DB を初期状態に戻
 
 ### 接続情報
 
-`.env` で渡す。`.env` は Git 管理外なので、各自 `.env.example` からコピーして使う。ホストの 3306 が埋まっている場合は `DB_PUBLISHED_PORT` を変更する。公開先は `127.0.0.1` に限定してあるため、同一ネットワークの他端末からは接続できない。
+`.env` で渡す。`.env` は Git 管理外なので、各自 `.env.example` からコピーして値を記入する。公開先は `127.0.0.1` に限定してあるため、同一ネットワークの他端末からは接続できない。
 
 MySQL の文字セット・タイムゾーン・`wait_timeout` は `compose.yaml` の `db.command` で mysqld の起動オプションとして明示している。設定ファイルに切り出すほどの分量ではないため。
 
