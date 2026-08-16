@@ -92,11 +92,12 @@ Issue 管理がまだ運用されていない場合は、Phase 1 の代わりに
 ## 注意事項
 
 - 各フェーズの結果はTasks機能のmetadataで連携する
-- テスト・lint・ビルドはホストの Go ツールチェーンで実行する（本プロジェクトにコンテナ環境は無い）
-  - テスト: `go test ./...` — 詳細は `tdd-workflow` スキル
-  - lint: `gofmt -w .` → `go vet ./...` — 詳細は `linter-execute` スキル
-  - ビルド: `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap ./cmd/publisher`
-- `Makefile` / `go.mod` はまだ整備されていない可能性がある。存在を確認せずにラッパーコマンドを実行しない
-- 設計上の判断に迷う場合は `heavy-weather-architecture.md`（唯一の真実の源）と `CLAUDE.md` を参照する
+- テスト・lint・ビルドは `docker compose` の `app` コンテナ内で実行する（ホストに Go を入れない構成）
+  - 起動: `cp .env.example .env && docker compose up -d`
+  - テスト: `docker compose exec app go test ./...` — 詳細は `tdd-workflow` スキル
+  - lint: `docker compose exec app gofmt -w .` → `docker compose exec app go vet ./...` — 詳細は `linter-execute` スキル
+  - ビルド: `docker compose exec app go build ./...`。Lambda 向けバイナリのビルドは `cmd/` を追加する第2段階以降
+- `Makefile` はまだ整備されていない。存在を確認せずにラッパーコマンドを実行しない
+- 設計上の判断に迷う場合は `documents/heavy-weather-architecture.md`（唯一の真実の源）と `CLAUDE.md` を参照する。`documents/` は Git 管理外のため手元に存在しないことがあり、その場合は判断を進めずユーザーに確認する
 - 実装ステップは設計書 §9 の段階順（第0〜第5段階）に従う。段階を飛ばさない
 - GitHub操作には `gh` CLIを使用する（MCP サーバーは使用しない）

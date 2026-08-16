@@ -1,6 +1,6 @@
 ---
 name: linter-execute
-description: テスト通過後のlint確認・修正手順を定義するスキル。Go標準ツールチェーン（gofmt / go vet）でlintを実行する。TDD実装フロー内でテストPASS後に使用する。
+description: テスト通過後のlint確認・修正手順を定義するスキル。docker compose の app コンテナ内で Go 標準ツールチェーン（gofmt / go vet）を実行する。TDD実装フロー内でテストPASS後に使用する。
 user-invocable: false
 allowed-tools: Bash
 ---
@@ -13,8 +13,8 @@ allowed-tools: Bash
 
 ## 前提
 
-- 本プロジェクトはリポジトリ直下が単一の Go モジュール（フロントエンド・コンテナ環境は無い）
-- lint はホストの Go ツールチェーンで直接実行する
+- 本プロジェクトはリポジトリ直下が単一の Go モジュール（フロントエンドは無い）
+- lint は `docker compose` の `app` コンテナ内で実行する。ホストに Go を入れない構成のため、ホストで直接叩かない
 - `Makefile` によるラッパーコマンドは**未整備**。整備された場合は本スキルの手順をそれに置き換える
 
 ## lint実行
@@ -23,10 +23,10 @@ allowed-tools: Bash
 
 ```bash
 # 1. フォーマット確認・修正
-gofmt -l -w .
+docker compose exec app gofmt -l -w .
 
 # 2. vet（静的解析）
-go vet ./...
+docker compose exec app go vet ./...
 ```
 
 `gofmt -l` が出力したファイルはフォーマットが変更されたものなので、差分を確認すること。
@@ -43,10 +43,13 @@ golangci-lint run ./...
 
 ## ビルド確認
 
-Lambda 向けバイナリがビルドできることも併せて確認する（`provided.al2023` ランタイム、バイナリ名は `bootstrap` 固定）。
+まず `docker compose exec app go build ./...` で全パッケージがビルドできることを確認する。
+
+`cmd/` が追加される第2段階以降は、Lambda 向けバイナリがビルドできることも併せて確認する（`provided.al2023` ランタイム、バイナリ名は `bootstrap` 固定）。
 
 ```bash
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o bootstrap ./cmd/publisher
+docker compose exec app env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+  go build -tags lambda.norpc -o bootstrap ./cmd/publisher
 ```
 
 `cmd/sender` が実装済みであれば同様にビルド確認する。

@@ -46,7 +46,7 @@ color: yellow
 
 ## 制約事項
 
-- テスト・lint・ビルドはホスト上の Go ツールチェーンで直接実行する（本プロジェクトは Docker / docker-compose を使わない）。`go test ./...` / `gofmt -w .` / `go vet ./...` を用いる
+- テスト・lint・ビルドは `docker compose` の `app` コンテナ内で実行する（ホストに Go を入れない構成）。`docker compose exec app go test ./...` / `docker compose exec app gofmt -w .` / `docker compose exec app go vet ./...` を用いる
 - `internal/domain` に `aws-lambda-go` や AWS SDK を import しない。AWS 依存は `internal/adapter` と `cmd/` に閉じ込める
 - **コミット（`git add` / `git commit`）は行わない**。テスト作成・実装・テスト実行・lint・レビュー指摘の修正までが責務であり、コミットはメインコンテキスト（`implement-task`スキル）が `/commit-commands:commit` で実行する（本リポジトリが未だ `git init` されていない場合、コミット関連の判断もメインコンテキストに委ねる）
 - **他サブエージェント（レビューエージェント等）の起動は行わない**。レビューエージェントの起動・並列実行はメインコンテキストが担う

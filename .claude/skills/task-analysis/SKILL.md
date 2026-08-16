@@ -39,7 +39,7 @@ Issue仕様を以下の観点で構造化して把握する。
 
 主要なドメイン語彙: `Forecast`（予報）/ `City`・`CityID` / `User`・`UserID` / `RainHours`（降雨時間帯）/ `NotificationEvent` / `NotificationID` / `Channel`（email、将来 push）/ `PrecipitationProbability`。設計書と異なる語を新たに導入しない。
 
-> **注意**: 本リポジトリはまだ実装コードが存在しない（設計書と `CLAUDE.md` のみ）。既存コードが見つからないのは異常ではないので、その場合は設計書 `heavy-weather-architecture.md` の該当セクションを一次情報として調査する。
+> **注意**: 本リポジトリは実装がごく初期の段階にある（ローカル開発環境と Go モジュールのみで、ドメインロジック以降は未実装）。既存コードが見つからないのは異常ではないので、その場合は設計書 `documents/heavy-weather-architecture.md` の該当セクションを一次情報として調査する。`documents/` は Git 管理外のため、手元に存在しないことがある。
 
 ### 既存パターンの調査
 
