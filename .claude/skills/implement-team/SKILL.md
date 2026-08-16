@@ -1,7 +1,7 @@
 ---
 name: implement-team
 description: implementer / format-checker / reviewer の3エージェントからなるチームを起動し、実装 → 並列レビュー → 修正のループを指摘がなくなるまで（最大3周）回して1つのタスクを仕上げる。ユーザーが実装したい内容を自然文で伝えてきたとき、「実装して」「作って」「直して」「エージェントチームで」「レビューまで回して」のように依頼された場合に使用する。GitHub Issue 番号が起点でないタスクの実装は、単独で書き始める前にまずこのスキルを使うこと。
-allowed-tools: Read, Glob, Grep, Bash, Skill, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet
+allowed-tools: Read, Glob, Grep, Bash, Skill, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, SendMessage, ListAgents, AskUserQuestion
 user-invocable: true
 ---
 
@@ -11,6 +11,7 @@ user-invocable: true
 
 | 役割 | エージェント | 責務 |
 |---|---|---|
+| leader | `general-purpose` | チームの状態監視とエスカレーション。実装・レビューには関与しない |
 | implementer | `implementer` | タスク仕様に基づく TDD 実装、およびレビュー指摘の修正 |
 | format-checker | `format-checker` | `.claude/rules/` のルールと `gofmt` / `go vet` への適合確認 |
 | reviewer | `code-reviewer` | 実装結果への批判的レビュー（設計・不変条件・バグ・セキュリティ） |
@@ -18,6 +19,44 @@ user-invocable: true
 format-checker と reviewer は**指摘を返すだけで、コードを修正しない**。修正は必ず implementer に戻す。役割の分離を崩すと、誰が何を直したのか追えなくなり、同じ箇所を二重に書き換える事故が起きる。
 
 オーケストレーション（各エージェントの起動順、指摘の受け渡し、終了判定）はこのスキルを読んでいるメインコンテキストの責務であり、サブエージェントには委譲しない。
+
+## leader
+
+タスク開始時点で、他の3エージェントとは別に `leader` を1体起動する。名前は `leader` で固定する。
+
+**leader はタスクを持たない。** 実装もレビューも修正も行わず、コードを1行も書かない。専念するのは「チームが適切に回っているか」の監視と、回らなくなったときのエスカレーションのみである。
+
+### やること
+
+- 各 teammate の稼働状況を追う（誰が動いていて、誰が報告済みで、誰が沈黙しているか）
+- 想定どおりに進んでいない兆候を検知する。具体的には以下
+  - 報告が届かないまま完了通知だけが来た teammate がいる
+  - 同じ指摘が複数ラウンドにわたって解消されない
+  - レビューが3周に到達しそう、あるいは到達した
+  - テストや lint が通らないまま先に進もうとしている
+- 検知した内容を `SendMessage` で `to: "team-lead"` に報告する
+
+### やらないこと
+
+- **他の teammate の作業に介入しない。** 実装内容の指示、レビュー指摘の追加、コードの修正、いずれも行わない
+- teammate に直接メッセージを送って作業を変えさせない。気づいたことは必ず team-lead 経由で流す
+- 独自にサブエージェントを起動しない
+
+### ユーザー判断が必要なとき
+
+leader はユーザーへ直接問い合わせる手段を持たない（`AskUserQuestion` はメインコンテキストのツールである）。したがって leader の「判断を仰ぐ」は、**team-lead へ報告し、team-lead がユーザーに問う**という経路になる。
+
+leader からエスカレーションを受けた場合、メインコンテキストは推測で握りつぶさず、`AskUserQuestion` でユーザーに判断を求めるか、少なくとも報告に含めること。
+
+なお leader を置いてもオーケストレーションの責務はメインコンテキストに残る。leader は監視役であって指揮役ではない。両者が指示を出すと teammate が二重の指示を受けるため、この分担を崩さない。
+
+## 報告の経路
+
+エージェントチームが有効な環境では、サブエージェントはバックグラウンドのチームメイトとして動く。このとき最終応答テキストはメインコンテキストに渡らず、完了通知だけが届く。**各エージェントを起動する際、報告は `SendMessage` で `to: "team-lead"` 宛てに送るよう明示的に指示すること。**
+
+- 宛先に `"main"` を指定させない。サブエージェント自身が独立セッション扱いのため `"main"` は自分自身を指し、送信がエラーになる
+- `summary` には判定そのもの（`approved` / `指摘N件: <要約>`）を書かせる。本文が長い場合でも判定だけは通知に載る
+- 報告が届かないまま完了通知だけが来た場合、推測で進めない。`SendMessage` で当該エージェントに再送を依頼するか、検証を自分で実行し直して事実を確認する
 
 ## Phase 0: 仕様の確定とタスク登録
 
@@ -29,6 +68,17 @@ format-checker と reviewer は**指摘を返すだけで、コードを修正�
    - metadata: `{"type": "implementation", "spec": "<タスク仕様の全文>"}`
 
    仕様をタスクに載せるのは、`implementer` が `TaskGet` で仕様を参照する設計になっているため。プロンプトにだけ書くと、修正ラウンドで仕様が失われる。
+
+4. `leader` を起動する（`general-purpose`、名前は `leader`）。実装エージェントより先に起動し、Phase 3 の最後まで常駐させる。
+
+   渡す情報:
+
+   - 対象タスク ID
+   - チーム構成（implementer / format-checker / reviewer のどれをいつ起動する予定か）
+   - 「タスクは持たない。実装・レビュー・修正を一切行わず、他 teammate の作業に介入しない」旨
+   - 「気づいたことは `SendMessage` で `to: "team-lead"` に報告する。teammate へ直接送らない」旨
+
+   leader を先に起動するのは、implementer の立ち上がりから監視対象にするため。後から起動すると初動の異常を取りこぼす。
 
 ## Phase 1: 実装（ラウンド 0）
 
@@ -63,7 +113,7 @@ format-checker と reviewer は**指摘を返すだけで、コードを修正�
 
 | 状況 | 対応 |
 |---|---|
-| format-checker と reviewer の両方が `approved` | **完了**。Phase 3 へ |
+| format-checker と reviewer の両方が `approved` | **完了**。「完了した teammate のシャットダウン」を実施し、Phase 3 へ |
 | どちらかに指摘がある、かつ `n < 3` | 2-3 の修正へ進み、ラウンド `n+1` を開始 |
 | どちらかに指摘がある、かつ `n = 3` | 2-3 の修正を行った後、2-4 の最終確認をして**打ち切り**。Phase 3 へ |
 
@@ -86,6 +136,43 @@ format-checker と reviewer は**指摘を返すだけで、コードを修正�
 
 ここで残った指摘が「未解決の指摘」である。推測で「たぶん直った」と書かないために、必ずこの確認を経てから報告する。
 
+## 完了した teammate のシャットダウン
+
+**レビューが通った時点（2-2 で両者 `approved`、または 2-4 の最終確認を終えた時点）で、作業を完了した teammate をシャットダウンし、そのペインも閉じる。** 放置すると次のタスクで同名のエージェントを起動したときに宛先が曖昧になり、アイドル通知だけが延々と届く。
+
+leader は最後に落とす。他の teammate の終了まで監視させるため。
+
+### 手順
+
+1. **シャットダウン要求を送る。** 対象ごとに `SendMessage` で送信する。
+
+   ```json
+   {"to": "<agent-name>", "message": {"type": "shutdown_request", "reason": "<作業が完了し報告済みである旨>"}}
+   ```
+
+2. **終了を確認する。** 通知を待つだけでなく、プロセスの消滅を確認する。`<team-name>` は teammate プロセスの `--team-name` に入っている値。
+
+   ```sh
+   ps -eo pid,command | grep -- "--team-name <team-name>" | grep -v grep
+   ```
+
+3. **応答しない場合は SIGTERM で落とす。** `tools:` に `SendMessage` を持たないエージェントは `shutdown_response` を返せないため、正規手順では終了しない。この場合に限り `kill -TERM <pid>` を使う。**アイドルであることを確認してから行う**（作業中のプロセスを落とすと成果物が中途半端に残る）。
+
+4. **残ったペインを閉じる。** シャットダウンした teammate のペインはシェルだけが残ることがある。
+
+   ```sh
+   tmux list-panes -a -F "#{session_name}:#{window_index}.#{pane_index} pane=#{pane_id} pid=#{pane_pid} cmd=#{pane_current_command}"
+   tmux kill-pane -t <pane-id>
+   ```
+
+   正規手順で終了した teammate は自身のペインを閉じるため、この操作が不要な場合がある。
+
+### 閉じてはいけないもの
+
+**メインセッションのペインを閉じない。** teammate プロセスの `--parent-session-id` がメインのセッション ID であり、それをホストしているペインが該当する。ここを閉じると作業中のセッションごと落ちる。
+
+同様に、ユーザーが別途開いているペイン（エディタ、シェルなど）にも触れない。閉じる前に必ず `tmux list-panes` で対象を特定し、**閉じるペインと残すペインを報告に明示する。**
+
 ## Phase 3: 報告
 
 `TaskUpdate` でタスクを `completed` にし、ユーザーへ以下を報告する。
@@ -99,6 +186,11 @@ format-checker と reviewer は**指摘を返すだけで、コードを修正�
 ## レビュー経過
 - 実施ラウンド数: <n> 周
 - 終了理由: 両者承認 / 3周到達による打ち切り
+
+## チームの終了状況
+- シャットダウンした teammate: <一覧。正規手順 / SIGTERM のどちらで落としたかを明記>
+- 閉じたペイン: <pane-id の一覧。なければ「なし」>
+- leader からのエスカレーション: <内容。なければ「なし」>
 
 ## 未解決の指摘
 <打ち切り時のみ。ファイル・指摘内容・なぜ解消しなかったかを1件ずつ列挙する。なければ「なし」>

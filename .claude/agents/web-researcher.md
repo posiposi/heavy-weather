@@ -1,7 +1,7 @@
 ---
 name: web-researcher
 description: 公式ドキュメント・API仕様書の調査やエラー解決策のWeb検索を行うエージェント。取得した情報を要約してメインコンテキストに返却し、コンテキスト消費を抑える。
-tools: WebFetch, WebSearch, Write
+tools: WebFetch, WebSearch, Write, SendMessage, ListAgents
 model: inherit
 color: blue
 ---

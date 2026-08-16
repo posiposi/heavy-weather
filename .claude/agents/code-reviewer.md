@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: 実装エージェントが作成したコードをレビューするエージェント。コード変更後にproactiveに使用する。
-tools: Read, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet
+tools: Read, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet, SendMessage, ListAgents
 model: inherit
 skills:
   - code-review

@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: メインコンテキストから指示された実装作業（テストコード作成・コード実装・テスト実行・レビュー指摘修正）をTDD（テスト駆動開発）とDDD（ドメイン駆動設計）に基づいて行うエージェント。
-tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet
+tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskList, TaskGet, SendMessage, ListAgents
 model: inherit
 permissionMode: acceptEdits
 skills:

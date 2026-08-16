@@ -1,7 +1,7 @@
 ---
 name: format-checker
 description: 変更されたコードが .claude/rules/ 配下のルール（Goスタイル・DDDアーキテクチャ・テスト・セキュリティ）と gofmt / go vet に適合しているかを機械的に確認するエージェント。実装・修正の直後に使用する。
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, SendMessage, ListAgents
 model: inherit
 color: green
 ---

@@ -1,7 +1,7 @@
 ---
 name: pr-creator
 description: 実装完了後にPull Requestのタイトル・本文を生成するエージェント。PR本文の草案作成が必要な場合に使用する。
-tools: Read, Glob, Grep, Bash, TaskList, TaskGet
+tools: Read, Glob, Grep, Bash, TaskList, TaskGet, SendMessage, ListAgents
 model: inherit
 skills:
   - pr-template
