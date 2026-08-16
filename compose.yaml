@@ -13,6 +13,9 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       APP_PORT: ${APP_PORT}
+      GOOSE_DRIVER: mysql
+      GOOSE_DBSTRING: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+      GOOSE_MIGRATION_DIR: /app/db/migrations
     ports:
       - "127.0.0.1:${APP_PUBLISHED_PORT:-8080}:${APP_PORT:-8080}"
     volumes:

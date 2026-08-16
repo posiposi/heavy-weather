@@ -105,6 +105,29 @@ docker compose exec db sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL
 
 モジュールキャッシュ（`/go/pkg/mod`）とビルドキャッシュは名前付きボリュームに置いてあるため、コンテナを作り直しても再ダウンロード・再ビルドは発生しない。MySQL のデータも同様に永続化される。
 
+### マイグレーション
+
+スキーマ変更は [goose](https://github.com/pressly/goose) で管理する。CLI は `app` イメージに同梱してあるため、追加のインストールは不要。
+
+すでに環境を起動したことがある場合は、イメージを作り直す必要がある。`docker compose up -d` は `Dockerfile` の変更を検知しない。
+
+```sh
+docker compose up -d --build
+```
+
+```sh
+docker compose exec app goose -s create <name> sql  # マイグレーションファイルを作成
+docker compose exec app goose status                # 適用状況を確認
+docker compose exec app goose up                    # 未適用のものをすべて適用
+docker compose exec app goose down                  # 直近の1件を巻き戻す
+```
+
+生成されたファイルは `db/migrations/` に置かれ、`-- +goose Up` / `-- +goose Down` の各セクションに SQL を記述する。`Down` は `Up` を打ち消す内容にしておく。
+
+バージョンは `-s` による連番採番で統一する。タイムスタンプ採番と混在させると、後から追加した連番のほうがバージョン番号として小さくなり、goose が `missing (out-of-order) migrations` として適用を拒否する。`-s` を省略しない。
+
+接続先とファイルの配置先は `compose.yaml` の `GOOSE_DRIVER` / `GOOSE_DBSTRING` / `GOOSE_MIGRATION_DIR` で `app` サービスに渡してあり、`GOOSE_DBSTRING` は `.env` の `DB_*` から組み立てられる。コマンド側で DSN を指定する必要はない。
+
 ### 停止・破棄
 
 ```sh
