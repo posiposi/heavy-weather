@@ -120,8 +120,11 @@ MySQL の文字セット・タイムゾーン・`wait_timeout` は `compose.yaml
 
 | ファイル | 内容 |
 |---|---|
-| [heavy-weather-architecture.md](./heavy-weather-architecture.md) | アーキテクチャ設計。全体構成、技術選定の根拠と却下した選択肢、イベント設計、実装上の注意点、実装ステップ |
+| `documents/heavy-weather-architecture.md` | アーキテクチャ設計。全体構成、技術選定の根拠と却下した選択肢、イベント設計、実装上の注意点、実装ステップ |
+| `documents/heavy-weather-db-schema.md` | DB スキーマ設計。テーブル定義、制約・インデックス、MySQL 固有の注意点 |
 | [CLAUDE.md](./CLAUDE.md) | 開発時に踏まえるべき不変条件と落とし穴 |
+
+**`documents/` は Git 管理外**（`.gitignore` に登録済み）。clone しただけでは存在しないため、別途入手して同じパスに置く。
 
 技術選定については、採用したものだけでなく**検討して見送ったものとその理由**を設計書に残してある。前提が変われば結論も変わりうるため、判断を覆す際はそこを参照されたい。
 

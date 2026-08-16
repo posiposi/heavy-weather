@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## リポジトリの現状
 
-**ローカル開発環境（Docker）と Go モジュールのみが存在する。** ドメインロジック以降は未実装で、`internal/domain` はパッケージ宣言だけの状態（設計書 §9 第1段階で実体を入れる）。`heavy-weather-architecture.md`（設計書）が唯一の真実の源であり、以下の記述はそこからの要約である。判断に迷う場合は設計書の該当セクションを参照すること。
+**ローカル開発環境（Docker）と Go モジュールのみが存在する。** ドメインロジック以降は未実装で、`internal/domain` はパッケージ宣言だけの状態（設計書 §9 第1段階で実体を入れる）。`documents/heavy-weather-architecture.md`（設計書）が唯一の真実の源であり、以下の記述はそこからの要約である。判断に迷う場合は設計書の該当セクションを参照すること。
+
+**`documents/` は Git 管理外である。** 手元に存在しない場合は設計書を参照できないため、設計上の判断が必要な場面ではその旨を伝えて指示を仰ぐこと。要約であるこのファイルの記述だけで判断を進めない。
 
 コードを追加した時点で、このファイルの「コマンド」セクションを実際に動くコマンドへ更新すること。
 
@@ -31,7 +33,7 @@ Go の alpine イメージは使わない。musl libc であり、本番の Lamb
 
 書かないもの。
 
-- **技術・バージョン・イメージの採用理由。** 選定の背景は `heavy-weather-architecture.md`（設計書）に、運用上踏まえるべき事項は `CLAUDE.md` に、使い方は `README.md` に書く。コメントに置くと同じ根拠が複数箇所に散り、更新漏れで矛盾する
+- **技術・バージョン・イメージの採用理由。** 選定の背景は `documents/heavy-weather-architecture.md`（設計書）に、運用上踏まえるべき事項は `CLAUDE.md` に、使い方は `README.md` に書く。コメントに置くと同じ根拠が複数箇所に散り、更新漏れで矛盾する
 - **設定値が何であるかの言い換え。** `character-set-server = utf8mb4` に「文字セットの設定」と付ける類
 - **セクション見出し代わりのコメント**
 
@@ -104,7 +106,7 @@ docker compose exec app env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
 - **9系も選ばない。** 次期 LTS の 9.7（2026年4月 GA）は RDS では Database Preview 環境のみの提供で、本番利用が禁じられている（インスタンスが作成から60日で自動削除される、RDS Proxy が使えない、サポート対象外）。RDS で一般提供され次第、Blue/Green デプロイでの移行を検討する。
 - 8.4 の RDS 標準サポート終了は 2029年7月31日、Extended Support 終了は 2032年7月31日。
 - 文字セットは `utf8mb4`、照合順序は `utf8mb4_0900_ai_ci`。ストレージエンジンは InnoDB（外部キー制約を使うため MyISAM は不可）。
-- テーブル定義は `heavy-weather-db-schema.md` を参照する。
+- テーブル定義は `documents/heavy-weather-db-schema.md` を参照する。
 
 接続の扱い:
 
