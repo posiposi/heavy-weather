@@ -58,21 +58,21 @@ TaskListでレビュータスク（metadata.type === "review"）を取得する�
 
 ## テスト実行
 
-**重要**: 本プロジェクトは Docker / docker-compose を使わない。ホスト上の Go ツールチェーンで直接実行する。
+**重要**: 本プロジェクトはホストに Go を入れない構成である。`docker compose` の `app` コンテナ内で実行する。
 
 ```bash
 # 特定のテスト実行
-go test ./internal/domain/...
+docker compose exec app go test ./internal/domain/...
 
 # 全テスト実行
-go test ./...
+docker compose exec app go test ./...
 ```
 
 ## lint実行
 
 ```bash
-gofmt -w .
-go vet ./...
+docker compose exec app gofmt -w .
+docker compose exec app go vet ./...
 ```
 
 ## 修正結果の記録
@@ -107,7 +107,7 @@ go vet ./...
 
 ## 制約事項
 
-- テスト・lint・ビルドはホスト上の Go ツールチェーンで直接実行する（Docker は使わない）
+- テスト・lint・ビルドは `docker compose exec app` 経由でコンテナ内で実行する（ホストに Go を入れない構成）
 - レビュー指摘に関係のないコードは修正しない
 - 修正の根拠をTaskUpdateのmetadataに記録する
 - lintエラーの場合はlintを無効化するアノテーション等を使用せず、根本的な問題解決を行う

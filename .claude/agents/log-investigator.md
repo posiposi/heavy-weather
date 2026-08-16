@@ -44,17 +44,25 @@ promptで受け取った以下の2つのタスクIDを使用する：
 
 ## コマンド例
 
-**前提**: 本プロジェクトは Docker / docker-compose を使わない。コマンドはホスト上で直接実行する。実装が未着手の段階では以下が空振りすることがあるため、その旨も調査結果に記録する。
+**前提**: 本プロジェクトはホストに Go を入れない構成である。Go のコマンドは `docker compose` の `app` コンテナ内で実行する。実装が初期段階のため以下が空振りすることがあり、その旨も調査結果に記録する。
 
 ```bash
-# テスト実行
-go test ./...
+# コンテナの状態確認
+docker compose ps
 
-# ビルド確認（Lambda 向け）
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o /tmp/bootstrap ./cmd/publisher
+# コンテナのログ確認
+docker compose logs app
+docker compose logs db
+
+# テスト実行
+docker compose exec app go test ./...
+
+# ビルド確認（cmd/ が追加された第2段階以降）
+docker compose exec app env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+  go build -tags lambda.norpc -o /tmp/bootstrap ./cmd/publisher
 
 # 静的解析
-go vet ./...
+docker compose exec app go vet ./...
 
 # Lambda のログ確認（デプロイ済みの場合）
 aws logs tail /aws/lambda/<function-name> --since 1h

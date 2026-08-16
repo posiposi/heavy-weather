@@ -58,12 +58,88 @@
 - **役割を分けてもロジックは共有する。** 分かれるのは入口だけで、その内側は共通のコードを参照する
 - **アプリケーションとインフラ定義を同じリポジトリに置く。** この規模では両者が同時に変わることが多く、分けると変更が分断される
 
+## ローカル開発環境
+
+Go と MySQL を `docker compose` で立ち上げる。ホストに Go や MySQL を入れる必要はない。
+
+| 用途 | イメージ |
+|---|---|
+| Go | `golang:1.26.6-bookworm` |
+| MySQL | `mysql:8.4.10` |
+
+Go は alpine ではなく Debian ベース（bookworm）を使う。alpine は musl libc であり、本番の Lambda ランタイム `provided.al2023`（glibc）と揃わないため、切り分けの難しい差異が生まれる。
+
+### 起動
+
+```sh
+cp .env.example .env
+# .env に値を記入する（次表を参照）
+docker compose up -d
+```
+
+`.env.example` はキーのみで値は空にしてある。**空のままでは起動しない**（MySQL がパスワード未設定で起動を拒否し、ポート指定も不正になる）。
+
+| 変数 | 設定する値 |
+|---|---|
+| `MYSQL_ROOT_PASSWORD` | 任意。ローカル専用なので強度は問わない |
+| `MYSQL_DATABASE` | 任意のデータベース名。`heavy_weather` を想定 |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | アプリが使うユーザー。`root` は指定できない |
+| `DB_PUBLISHED_PORT` | ホスト側の MySQL 公開ポート。通常 `3306`。埋まっていれば変更する |
+| `APP_PORT` | `app` コンテナ内で待ち受けるポート。通常 `8080` |
+| `APP_PUBLISHED_PORT` | ホスト側の `app` 公開ポート。通常 `8080` |
+| `DB_HOST` | **`db` 固定**。compose のサービス名であり、他の値では解決できない |
+| `DB_PORT` | **`3306` 固定**。コンテナ間通信のポートで `DB_PUBLISHED_PORT` とは別物 |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` と同じ値 |
+
+`db` のヘルスチェックが healthy になるまで `app` は起動を待つ。初回はイメージの取得と MySQL の初期化で数十秒かかる。
+
+### 使い方
+
+```sh
+docker compose exec app go test ./...   # テスト
+docker compose exec app go build ./...  # ビルド
+docker compose exec app go vet ./...    # lint
+# DB に接続（パスワードはコンテナ内のシェルで展開させる）
+docker compose exec db sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
+```
+
+モジュールキャッシュ（`/go/pkg/mod`）とビルドキャッシュは名前付きボリュームに置いてあるため、コンテナを作り直しても再ダウンロード・再ビルドは発生しない。MySQL のデータも同様に永続化される。
+
+### 停止・破棄
+
+```sh
+docker compose down     # 停止（データは残る）
+docker compose down -v  # ボリュームごと破棄（DB を初期状態に戻す）
+```
+
+### ポート
+
+| サービス | ホスト側 | 用途 |
+|---|---|---|
+| `app` | `127.0.0.1:${APP_PUBLISHED_PORT}`（既定 8080） | ドメインロジックをブラウザや `curl` から動作確認するための入口 |
+| `db` | `127.0.0.1:${DB_PUBLISHED_PORT}`（既定 3306） | GUI クライアント等からの接続 |
+
+`app` のポートは開けてあるが、現時点で待ち受けるプロセスはない。第1段階でドメインロジックを手で叩いて確認したくなった時点で、`cmd/` 配下に動作確認用の HTTP サーバーを追加する。
+
+その際、**コンテナ内では `0.0.0.0`（Go では `":"+port`）にバインドする**こと。`127.0.0.1` にバインドするとコンテナのループバックに閉じてしまい、ポートマッピングを通ってもホストから到達できない。待ち受けポートは `APP_PORT` から読む。
+
+### 接続情報
+
+`.env` で渡す。`.env` は Git 管理外なので、各自 `.env.example` からコピーして値を記入する。公開先は `127.0.0.1` に限定してあるため、同一ネットワークの他端末からは接続できない。
+
+MySQL の文字セット・タイムゾーン・`wait_timeout` は `compose.yaml` の `db.command` で mysqld の起動オプションとして明示している。設定ファイルに切り出すほどの分量ではないため。
+
+`db` に `LANG=C.UTF-8` を渡しているのは、`mysql` クライアントが接続時の文字セットをロケールから決めるため。未設定だと latin1 にフォールバックし、CLI から日本語を投入すると文字化けする。タイムゾーンを UTC 固定にしているのは、Lambda の実行環境が既定で UTC であり、ローカルだけ JST だと時刻の扱いの誤りが表面化しないため。
+
 ## ドキュメント
 
 | ファイル | 内容 |
 |---|---|
-| [heavy-weather-architecture.md](./heavy-weather-architecture.md) | アーキテクチャ設計。全体構成、技術選定の根拠と却下した選択肢、イベント設計、実装上の注意点、実装ステップ |
+| `documents/heavy-weather-architecture.md` | アーキテクチャ設計。全体構成、技術選定の根拠と却下した選択肢、イベント設計、実装上の注意点、実装ステップ |
+| `documents/heavy-weather-db-schema.md` | DB スキーマ設計。テーブル定義、制約・インデックス、MySQL 固有の注意点 |
 | [CLAUDE.md](./CLAUDE.md) | 開発時に踏まえるべき不変条件と落とし穴 |
+
+**`documents/` は Git 管理外**（`.gitignore` に登録済み）。clone しただけでは存在しないため、別途入手して同じパスに置く。
 
 技術選定については、採用したものだけでなく**検討して見送ったものとその理由**を設計書に残してある。前提が変われば結論も変わりうるため、判断を覆す際はそこを参照されたい。
 

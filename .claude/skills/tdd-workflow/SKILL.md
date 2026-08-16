@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: テスト駆動開発（TDD）のワークフロー定義。テスト実行はGo標準ツールチェーン（go test）で行う。Red→Green→Refactorのサイクル手順、テストの書き方、層別テスト方針との統合方法を定義する。テスト実装・実行時に使用する。
+description: テスト駆動開発（TDD）のワークフロー定義。テスト実行は docker compose の app コンテナ内（go test）で行う。Red→Green→Refactorのサイクル手順、テストの書き方、層別テスト方針との統合方法を定義する。テスト実装・実行時に使用する。
 user-invocable: false
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskGet, TaskList
 ---
@@ -114,20 +114,20 @@ func TestNewPrecipitationProbability(t *testing.T) {
 
 ## テスト実行コマンド
 
-リポジトリ直下が Go モジュールなので、ルートで直接実行する（コンテナ環境は無い）。
+`docker compose` の `app` コンテナ内で実行する。ホストに Go を入れない構成のため、ホストで直接叩かない。
 
 ```bash
 # 特定パッケージのテスト実行
-go test ./internal/domain/...
+docker compose exec app go test ./internal/domain/...
 
 # 全テスト実行
-go test ./...
+docker compose exec app go test ./...
 
 # 詳細出力
-go test -v ./internal/domain/...
+docker compose exec app go test -v ./internal/domain/...
 
 # integrationテスト実行（外部依存を伴うテストを書いた場合のみ）
-go test -tags=integration ./...
+docker compose exec app go test -tags=integration ./...
 ```
 
 `Makefile` によるラッパーコマンド（`make test` 等）は**未整備**。整備された場合は本スキルの手順をそれに置き換える。

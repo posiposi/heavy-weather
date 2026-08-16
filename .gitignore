@@ -34,3 +34,4 @@ bootstrap
 .worktrees/
 .worktree-ports.txt
 .vscode/
+documents/
