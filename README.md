@@ -84,7 +84,6 @@ docker compose up -d
 docker compose exec app go test ./...   # テスト
 docker compose exec app go build ./...  # ビルド
 docker compose exec app go vet ./...    # lint
-docker compose exec app go run ./cmd/devserver  # 動作確認用サーバー（http://localhost:8080）
 # DB に接続（パスワードはコンテナ内のシェルで展開させる）
 docker compose exec db sh -c 'mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
 ```
@@ -105,11 +104,9 @@ docker compose down -v  # ボリュームごと破棄（DB を初期状態に戻
 | `app` | `127.0.0.1:${APP_PUBLISHED_PORT}`（既定 8080） | ドメインロジックをブラウザや `curl` から動作確認するための入口 |
 | `db` | `127.0.0.1:${DB_PUBLISHED_PORT}`（既定 3306） | GUI クライアント等からの接続 |
 
-`app` 側の入口は `cmd/devserver`。`docker compose exec app go run ./cmd/devserver` で起動し、ホストから `http://localhost:8080/` を開くと `Hello, World!` が返る。ドメインロジックを手で叩いて確認したくなったら、このサーバーにハンドラを足す。
+`app` のポートは開けてあるが、現時点で待ち受けるプロセスはない。第1段階でドメインロジックを手で叩いて確認したくなった時点で、`cmd/` 配下に動作確認用の HTTP サーバーを追加する。
 
-`cmd/devserver` はローカル専用であり Lambda にはデプロイしない。Lambda のエントリポイントは `cmd/publisher` / `cmd/sender` として第2段階で追加する。
-
-新たにサーバーを書く場合、**コンテナ内では `0.0.0.0`（Go では `":"+port`）にバインドする**こと。`127.0.0.1` にバインドするとコンテナのループバックに閉じてしまい、ポートマッピングを通ってもホストから到達できない。待ち受けポートは `APP_PORT` から読む。
+その際、**コンテナ内では `0.0.0.0`（Go では `":"+port`）にバインドする**こと。`127.0.0.1` にバインドするとコンテナのループバックに閉じてしまい、ポートマッピングを通ってもホストから到達できない。待ち受けポートは `APP_PORT` から読む。
 
 ### 接続情報
 
