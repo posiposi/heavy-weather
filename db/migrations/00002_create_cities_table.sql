@@ -5,8 +5,8 @@ CREATE TABLE cities (
     latitude   DECIMAL(8,5)    NOT NULL,
     longitude  DECIMAL(8,5)    NOT NULL,
     timezone   VARCHAR(64)     NOT NULL DEFAULT 'Asia/Tokyo',
-    created_at DATETIME(6)     NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    updated_at DATETIME(6)     NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_cities_name (name),
     UNIQUE KEY uk_cities_coordinates (latitude, longitude)
