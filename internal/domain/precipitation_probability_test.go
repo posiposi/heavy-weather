@@ -51,9 +51,8 @@ func TestNewPrecipitationProbabilityOutOfRange(t *testing.T) {
 			if ok := errors.Is(err, ErrPrecipitationProbabilityOutOfRange); !ok {
 				t.Errorf("errors.Is(NewPrecipitationProbability(%v) のエラー(%v), ErrPrecipitationProbabilityOutOfRange) = %v, want %v", tt.value, err, ok, true)
 			}
-			var zero PrecipitationProbability
-			if got != zero {
-				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.value, got, zero)
+			if got != nil {
+				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.value, got, nil)
 			}
 		})
 	}
@@ -80,8 +79,8 @@ func TestPrecipitationProbabilityEquality(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.right, err, nil)
 			}
-			if got := left == right; got != tt.want {
-				t.Errorf("NewPrecipitationProbability(%v) == NewPrecipitationProbability(%v) = %v, want %v", tt.left, tt.right, got, tt.want)
+			if got := *left == *right; got != tt.want {
+				t.Errorf("*NewPrecipitationProbability(%v) == *NewPrecipitationProbability(%v) = %v, want %v", tt.left, tt.right, got, tt.want)
 			}
 		})
 	}
