@@ -15,10 +15,10 @@ func intPtr(v int) *int {
 
 func TestNewWeather(t *testing.T) {
 	tests := []struct {
-		name       string
-		code       *int
-		want       Weather
-		wantString string
+		name        string
+		code        *int
+		want        Weather
+		wantMeaning string
 	}{
 		{"0は快晴", intPtr(0), WeatherClearSky, "快晴"},
 		{"1は晴れ", intPtr(1), WeatherMainlyClear, "晴れ"},
@@ -58,29 +58,29 @@ func TestNewWeather(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewWeather(tt.code)
 			if got != tt.want {
-				t.Errorf("NewWeather(%v) = %v(%d), want %v(%d)", codeArg(tt.code), got, int(got), tt.want, int(tt.want))
+				t.Errorf("NewWeather(%v) = %d, want %d", codeArg(tt.code), int(got), int(tt.want))
 			}
-			if got.String() != tt.wantString {
-				t.Errorf("NewWeather(%v).String() = %v, want %v", codeArg(tt.code), got.String(), tt.wantString)
+			if got.Meaning() != tt.wantMeaning {
+				t.Errorf("NewWeather(%v).Meaning() = %v, want %v", codeArg(tt.code), got.Meaning(), tt.wantMeaning)
 			}
 		})
 	}
 }
 
-func TestWeatherStringForUndefinedValue(t *testing.T) {
+func TestMeaningForUndefinedValue(t *testing.T) {
 	undefined := Weather(weatherCount)
 	want := "不明"
-	if got := undefined.String(); got != want {
-		t.Errorf("Weather(%v).String() = %v, want %v", int(undefined), got, want)
+	if got := undefined.Meaning(); got != want {
+		t.Errorf("Weather(%v).Meaning() = %v, want %v", int(undefined), got, want)
 	}
 }
 
 func TestWeatherMeaningsCoversAllWeather(t *testing.T) {
 	t.Run("WMOコード表のすべての天気が意味を持つ", func(t *testing.T) {
-		unknown := WeatherUnknown.String()
+		unknown := WeatherUnknown.Meaning()
 		for code, w := range weatherByWMOCode {
-			if got := w.String(); got == unknown {
-				t.Errorf("NewWeather(%v).String() = %v, want not %v", code, got, unknown)
+			if got := w.Meaning(); got == unknown {
+				t.Errorf("NewWeather(%v).Meaning() = %v, want not %v", code, got, unknown)
 			}
 		}
 	})

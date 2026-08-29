@@ -114,8 +114,8 @@ func NewWeather(code *int) Weather {
 	return w
 }
 
-// String は天気の意味を日本語で返す。
-func (w Weather) String() string {
+// Meaning は天気の意味を日本語で返す。
+func (w Weather) Meaning() string {
 	m, ok := weatherMeanings[w]
 	if !ok {
 		return weatherMeanings[WeatherUnknown]
