@@ -25,8 +25,3 @@ func NewPrecipitationProbability(value int) (*PrecipitationProbability, error) {
 	}
 	return &PrecipitationProbability{value: value}, nil
 }
-
-// AtLeast は降水確率が threshold 以上かを返す。
-func (p *PrecipitationProbability) AtLeast(threshold *PrecipitationProbability) bool {
-	return p.value >= threshold.value
-}

@@ -85,34 +85,3 @@ func TestPrecipitationProbabilityEquality(t *testing.T) {
 		})
 	}
 }
-
-func TestPrecipitationProbabilityAtLeast(t *testing.T) {
-	tests := []struct {
-		name      string
-		value     int
-		threshold int
-		want      bool
-	}{
-		{"閾値ちょうどはtrue", 50, 50, true},
-		{"閾値を上回る場合はtrue", 51, 50, true},
-		{"閾値を下回る場合はfalse", 49, 50, false},
-		{"閾値0は下限の0でもtrue", 0, 0, true},
-		{"閾値100は上限の100でtrue", 100, 100, true},
-		{"閾値100は99でfalse", 99, 100, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p, err := NewPrecipitationProbability(tt.value)
-			if err != nil {
-				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.value, err, nil)
-			}
-			threshold, err := NewPrecipitationProbability(tt.threshold)
-			if err != nil {
-				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.threshold, err, nil)
-			}
-			if got := p.AtLeast(threshold); got != tt.want {
-				t.Errorf("NewPrecipitationProbability(%v).AtLeast(%v) = %v, want %v", tt.value, tt.threshold, got, tt.want)
-			}
-		})
-	}
-}
