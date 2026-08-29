@@ -9,7 +9,7 @@ import (
 func TestNewPrecipitationProbability(t *testing.T) {
 	tests := []struct {
 		name       string
-		percent    int
+		value      int
 		want       int
 		wantString string
 	}{
@@ -22,15 +22,15 @@ func TestNewPrecipitationProbability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewPrecipitationProbability(tt.percent)
+			got, err := NewPrecipitationProbability(tt.value)
 			if err != nil {
-				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.percent, err, nil)
+				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.value, err, nil)
 			}
 			if got.value != tt.want {
-				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, got.value, tt.want)
+				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.value, got.value, tt.want)
 			}
 			if got.String() != tt.wantString {
-				t.Errorf("NewPrecipitationProbability(%v).String() = %v, want %v", tt.percent, got.String(), tt.wantString)
+				t.Errorf("NewPrecipitationProbability(%v).String() = %v, want %v", tt.value, got.String(), tt.wantString)
 			}
 		})
 	}
@@ -38,8 +38,8 @@ func TestNewPrecipitationProbability(t *testing.T) {
 
 func TestNewPrecipitationProbabilityOutOfRange(t *testing.T) {
 	tests := []struct {
-		name    string
-		percent int
+		name  string
+		value int
 	}{
 		{"下限より1小さい-1", -1},
 		{"上限より1大きい101", 101},
@@ -48,16 +48,16 @@ func TestNewPrecipitationProbabilityOutOfRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewPrecipitationProbability(tt.percent)
+			got, err := NewPrecipitationProbability(tt.value)
 			if err == nil {
-				t.Errorf("NewPrecipitationProbability(%v) のエラー = %v, want not %v", tt.percent, err, nil)
+				t.Errorf("NewPrecipitationProbability(%v) のエラー = %v, want not %v", tt.value, err, nil)
 			}
 			if ok := errors.Is(err, ErrPrecipitationProbabilityOutOfRange); !ok {
-				t.Errorf("errors.Is(NewPrecipitationProbability(%v) のエラー(%v), ErrPrecipitationProbabilityOutOfRange) = %v, want %v", tt.percent, err, ok, true)
+				t.Errorf("errors.Is(NewPrecipitationProbability(%v) のエラー(%v), ErrPrecipitationProbabilityOutOfRange) = %v, want %v", tt.value, err, ok, true)
 			}
 			var zero PrecipitationProbability
 			if got != zero {
-				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, got, zero)
+				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.value, got, zero)
 			}
 		})
 	}
@@ -94,7 +94,7 @@ func TestPrecipitationProbabilityEquality(t *testing.T) {
 func TestPrecipitationProbabilityAtLeast(t *testing.T) {
 	tests := []struct {
 		name      string
-		percent   int
+		value     int
 		threshold int
 		want      bool
 	}{
@@ -107,16 +107,16 @@ func TestPrecipitationProbabilityAtLeast(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := NewPrecipitationProbability(tt.percent)
+			p, err := NewPrecipitationProbability(tt.value)
 			if err != nil {
-				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.percent, err, nil)
+				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.value, err, nil)
 			}
 			threshold, err := NewPrecipitationProbability(tt.threshold)
 			if err != nil {
 				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.threshold, err, nil)
 			}
 			if got := p.AtLeast(threshold); got != tt.want {
-				t.Errorf("NewPrecipitationProbability(%v).AtLeast(%v) = %v, want %v", tt.percent, tt.threshold, got, tt.want)
+				t.Errorf("NewPrecipitationProbability(%v).AtLeast(%v) = %v, want %v", tt.value, tt.threshold, got, tt.want)
 			}
 		})
 	}
