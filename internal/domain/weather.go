@@ -102,12 +102,9 @@ var weatherMeanings = map[Weather]string{
 }
 
 // NewWeather は WMO Weather interpretation code から Weather を生成する。
-// 表に無いコードと nil はいずれも WeatherUnknown となる。
-func NewWeather(code *int) Weather {
-	if code == nil {
-		return WeatherUnknown
-	}
-	w, ok := weatherByWMOCode[*code]
+// 表に無いコードは WeatherUnknown となる。
+func NewWeather(code int) Weather {
+	w, ok := weatherByWMOCode[code]
 	if !ok {
 		return WeatherUnknown
 	}
