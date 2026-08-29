@@ -7,7 +7,7 @@ import (
 
 // PrecipitationProbability は降水確率を表す値オブジェクトである。単位はパーセントで、0 以上 100 以下の整数を取る。
 type PrecipitationProbability struct {
-	percent int
+	value int
 }
 
 // ErrPrecipitationProbabilityOutOfRange は降水確率として取り得ない値が渡されたことを表す。
@@ -24,15 +24,15 @@ func NewPrecipitationProbability(percent int) (PrecipitationProbability, error) 
 	if percent < minPrecipitationProbability || percent > maxPrecipitationProbability {
 		return PrecipitationProbability{}, fmt.Errorf("%w: %d", ErrPrecipitationProbabilityOutOfRange, percent)
 	}
-	return PrecipitationProbability{percent: percent}, nil
+	return PrecipitationProbability{value: percent}, nil
 }
 
 // AtLeast は降水確率が threshold 以上かを返す。
 func (p PrecipitationProbability) AtLeast(threshold PrecipitationProbability) bool {
-	return p.percent >= threshold.percent
+	return p.value >= threshold.value
 }
 
 // String は "30%" の形式で降水確率を返す。
 func (p PrecipitationProbability) String() string {
-	return fmt.Sprintf("%d%%", p.percent)
+	return fmt.Sprintf("%d%%", p.value)
 }
