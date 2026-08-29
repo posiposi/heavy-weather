@@ -20,11 +20,11 @@ const (
 
 // NewPrecipitationProbability はパーセント表記の整数から PrecipitationProbability を生成する。
 // 0 以上 100 以下でない場合はゼロ値と ErrPrecipitationProbabilityOutOfRange を返す。
-func NewPrecipitationProbability(percent int) (PrecipitationProbability, error) {
-	if percent < minPrecipitationProbability || percent > maxPrecipitationProbability {
-		return PrecipitationProbability{}, fmt.Errorf("%w: %d", ErrPrecipitationProbabilityOutOfRange, percent)
+func NewPrecipitationProbability(value int) (PrecipitationProbability, error) {
+	if value < minPrecipitationProbability || value > maxPrecipitationProbability {
+		return PrecipitationProbability{}, fmt.Errorf("%w: %d", ErrPrecipitationProbabilityOutOfRange, value)
 	}
-	return PrecipitationProbability{value: percent}, nil
+	return PrecipitationProbability{value: value}, nil
 }
 
 // AtLeast は降水確率が threshold 以上かを返す。
