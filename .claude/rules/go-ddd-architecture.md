@@ -84,6 +84,47 @@ type CommandUpdateSubscription struct {
 }
 ```
 
+## Factory Function
+
+**構造体のインスタンスを生成する際は必ずファクトリ関数を使用する。** 構造体リテラルを直接書いてよいのはファクトリ関数の内部だけであり、それ以外の場所（同一パッケージ内を含む）では生成関数を経由する。フィールドを非公開にすることで、パッケージ外からはこの規約が型で強制される。
+
+生成関数を迂回した生成を許すと、範囲検証や解釈を通っていないインスタンスが生まれ、「型を保持していること自体が不変条件を満たしていることの保証になる」という前提が崩れる（`CLAUDE.md`「アーキテクチャ上の不変条件」）。
+
+実装は Effective Go の [Constructors and composite literals](https://go.dev/doc/effective_go#composite_literals) に従う。
+
+```go
+// internal/domain/precipitation_probability.go
+package domain
+
+type PrecipitationProbability struct {
+	value int
+}
+
+var ErrPrecipitationProbabilityOutOfRange = errors.New("precipitation probability out of range")
+
+const (
+	minPrecipitationProbability = 0
+	maxPrecipitationProbability = 100
+)
+
+// NewPrecipitationProbability はパーセント表記の整数から PrecipitationProbability を生成する。
+// 0 以上 100 以下でない場合は nil と ErrPrecipitationProbabilityOutOfRange を返す。
+func NewPrecipitationProbability(value int) (*PrecipitationProbability, error) {
+	if value < minPrecipitationProbability || value > maxPrecipitationProbability {
+		return nil, fmt.Errorf("%w: %d", ErrPrecipitationProbabilityOutOfRange, value)
+	}
+	return &PrecipitationProbability{value: value}, nil
+}
+```
+
+守るべき点。
+
+- **入力値を検証してから生成する。** Effective Go の `NewFile` が `if fd < 0 { return nil }` を先頭に置くのと同じ形で、不正な入力からはインスタンスを作らずに返す。検証はこの1箇所に集約し、利用側に重複させない
+- **複合リテラルのアドレスを返す。** `new(File)` を作ってフィールドへ順に代入する形は書かない。`&T{...}` は評価のたびに新しいインスタンスを確保するため、ローカル変数のアドレスを返して差し支えない（Effective Go の明記事項）
+- **フィールドは `field: value` のラベル付きで書く。** ラベルを省いた `&File{fd, name, nil, 0}` は全フィールドを宣言順に並べる必要があり、フィールドの追加・並び替えで壊れる。ラベル付きなら順序が自由で、省いたフィールドはゼロ値になる
+- **失敗は `nil` と `error` で返す。** Effective Go の `NewFile` は `nil` のみを返すが、本プロジェクトでは失敗した理由を呼び出し側が判別できるようセンチネルエラーをラップして返す（`go-style.md`「Error Handling」）
+- **ゼロ値で十分な型にはファクトリ関数を作らない。** Effective Go の前提は「ゼロ値では不十分な場合に初期化のためのコンストラクタが必要になる」である。検証も既定値の設定もない生成関数は、呼び出し側に間接参照を増やすだけになる
+
 ## Query/Command Separation (CQRS)
 
 リポジトリインターフェースは原則として Query と Command に分離する。
