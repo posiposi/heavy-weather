@@ -26,8 +26,8 @@ func TestNewPrecipitationProbability(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewPrecipitationProbability(%v) のエラー = %v, want %v", tt.percent, err, nil)
 			}
-			if int(got) != tt.want {
-				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, int(got), tt.want)
+			if got.percent != tt.want {
+				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, got.percent, tt.want)
 			}
 			if got.String() != tt.wantString {
 				t.Errorf("NewPrecipitationProbability(%v).String() = %v, want %v", tt.percent, got.String(), tt.wantString)
@@ -57,7 +57,7 @@ func TestNewPrecipitationProbabilityOutOfRange(t *testing.T) {
 			}
 			var zero PrecipitationProbability
 			if got != zero {
-				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, int(got), int(zero))
+				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.percent, got, zero)
 			}
 		})
 	}
