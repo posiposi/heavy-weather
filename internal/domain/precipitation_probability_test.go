@@ -8,17 +8,16 @@ import (
 
 func TestNewPrecipitationProbability(t *testing.T) {
 	tests := []struct {
-		name       string
-		value      int
-		want       int
-		wantString string
+		name  string
+		value int
+		want  int
 	}{
-		{"下限の0", 0, 0, "0%"},
-		{"中間の50", 50, 50, "50%"},
-		{"上限の100", 100, 100, "100%"},
-		{"1", 1, 1, "1%"},
-		{"30", 30, 30, "30%"},
-		{"99", 99, 99, "99%"},
+		{"下限の0", 0, 0},
+		{"中間の50", 50, 50},
+		{"上限の100", 100, 100},
+		{"1", 1, 1},
+		{"30", 30, 30},
+		{"99", 99, 99},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -28,9 +27,6 @@ func TestNewPrecipitationProbability(t *testing.T) {
 			}
 			if got.value != tt.want {
 				t.Errorf("NewPrecipitationProbability(%v) = %v, want %v", tt.value, got.value, tt.want)
-			}
-			if got.String() != tt.wantString {
-				t.Errorf("NewPrecipitationProbability(%v).String() = %v, want %v", tt.value, got.String(), tt.wantString)
 			}
 		})
 	}

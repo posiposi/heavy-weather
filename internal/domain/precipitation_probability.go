@@ -31,8 +31,3 @@ func NewPrecipitationProbability(value int) (PrecipitationProbability, error) {
 func (p PrecipitationProbability) AtLeast(threshold PrecipitationProbability) bool {
 	return p.value >= threshold.value
 }
-
-// String は "30%" の形式で降水確率を返す。
-func (p PrecipitationProbability) String() string {
-	return fmt.Sprintf("%d%%", p.value)
-}
