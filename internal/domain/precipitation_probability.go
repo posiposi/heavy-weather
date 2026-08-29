@@ -19,7 +19,6 @@ const (
 )
 
 // NewPrecipitationProbability はパーセント表記の整数から PrecipitationProbability を生成する。
-// 0 以上 100 以下でない場合は nil と ErrPrecipitationProbabilityOutOfRange を返す。
 func NewPrecipitationProbability(value int) (*PrecipitationProbability, error) {
 	if value < minPrecipitationProbability || value > maxPrecipitationProbability {
 		return nil, fmt.Errorf("%w: %d", ErrPrecipitationProbabilityOutOfRange, value)
