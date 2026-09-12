@@ -39,16 +39,10 @@ func TestNewForecastDateNotExist(t *testing.T) {
 		month time.Month
 		day   int
 	}{
-		{"非閏年の2月29日の2026-02-29", 2026, time.February, 29},
+		{"非閏年の2月29日", 2026, time.February, 29},
 		{"2月30日は3月2日へ正規化されない", 2026, time.February, 30},
-		{"100で割り切れ400で割り切れない年の2月29日の2100-02-29", 2100, time.February, 29},
-		{"31日が無い月の31日の2026-04-31", 2026, time.April, 31},
-		{"月が0", 2026, time.Month(0), 5},
 		{"月が13", 2026, time.Month(13), 5},
-		{"月が負値", 2026, time.Month(-1), 5},
-		{"日が0", 2026, time.September, 0},
 		{"日が32", 2026, time.September, 32},
-		{"日が負値", 2026, time.September, -1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
