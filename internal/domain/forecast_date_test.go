@@ -8,27 +8,25 @@ import (
 
 func TestNewForecastDate(t *testing.T) {
 	tests := []struct {
-		name  string
-		year  int
-		month time.Month
-		day   int
-		want  time.Time
+		name string
+		want time.Time
 	}{
-		{"実在する日付の2026-09-05", 2026, time.September, 5, time.Date(2026, time.September, 5, 0, 0, 0, 0, time.UTC)},
-		{"年始の2026-01-01", 2026, time.January, 1, time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)},
-		{"年末の2026-12-31", 2026, time.December, 31, time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC)},
-		{"非閏年の2月末日の2026-02-28", 2026, time.February, 28, time.Date(2026, time.February, 28, 0, 0, 0, 0, time.UTC)},
-		{"閏年の2月末日の2028-02-29", 2028, time.February, 29, time.Date(2028, time.February, 29, 0, 0, 0, 0, time.UTC)},
-		{"30日までの月の末日の2026-04-30", 2026, time.April, 30, time.Date(2026, time.April, 30, 0, 0, 0, 0, time.UTC)},
+		{"実在する日付の2026-09-05", time.Date(2026, time.September, 5, 0, 0, 0, 0, time.UTC)},
+		{"年始の2026-01-01", time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)},
+		{"年末の2026-12-31", time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC)},
+		{"非閏年の2月末日の2026-02-28", time.Date(2026, time.February, 28, 0, 0, 0, 0, time.UTC)},
+		{"閏年の2月末日の2028-02-29", time.Date(2028, time.February, 29, 0, 0, 0, 0, time.UTC)},
+		{"30日までの月の末日の2026-04-30", time.Date(2026, time.April, 30, 0, 0, 0, 0, time.UTC)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewForecastDate(tt.year, tt.month, tt.day)
+			year, month, day := tt.want.Date()
+			got, err := NewForecastDate(year, month, day)
 			if err != nil {
-				t.Fatalf("NewForecastDate(%v, %v, %v) のエラー = %v, want %v", tt.year, tt.month, tt.day, err, nil)
+				t.Fatalf("NewForecastDate(%v, %v, %v) のエラー = %v, want %v", year, month, day, err, nil)
 			}
 			if got.value != tt.want {
-				t.Errorf("NewForecastDate(%v, %v, %v) = %v, want %v", tt.year, tt.month, tt.day, got.value, tt.want)
+				t.Errorf("NewForecastDate(%v, %v, %v) = %v, want %v", year, month, day, got.value, tt.want)
 			}
 		})
 	}
