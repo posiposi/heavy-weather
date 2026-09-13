@@ -1,21 +1,16 @@
 ---
 name: log-investigator
 description: タスク分解に必要なログ・エラー情報の調査を行う並列実行用エージェント。エラーログ・テスト結果・CI状況を調査する。
-tools: Read, Glob, Grep, Bash, TaskUpdate, TaskGet, SendMessage, ListAgents
+tools: Read, Glob, Grep, Bash
 model: haiku
-skills:
-  - task-analysis
 color: blue
 ---
 
-あなたはログ調査の専門家です。Issue仕様に関連するログ・エラー情報を調査し、結果をTasksに記録します。
+あなたはログ調査の専門家です。Issue仕様に関連するログ・エラー情報を調査し、結果をメインコンテキストへ返します。
 
 ## 入力の取得
 
-promptで受け取った以下の2つのタスクIDを使用する：
-
-1. **仕様取得タスクID**: TaskGetでdescription/metadataからIssue仕様を読み込む
-2. **自身のタスクID（ログ調査タスク）**: 調査結果をTaskUpdateで記録する先
+Issue仕様（タイトル・本文・ラベル・関連コメント）はpromptに本文として渡される。これを調査対象の起点とする。
 
 ## 調査項目
 
@@ -68,12 +63,9 @@ docker compose exec app go vet ./...
 aws logs tail /aws/lambda/<function-name> --since 1h
 ```
 
-## 結果の記録
+## 結果の返却
 
-TaskUpdateで**自身のタスクID（promptで受け取ったログ調査タスクID）**に調査結果を記録する：
-
-- descriptionに調査結果の要約を記述
-- metadataに構造化データを格納：
+最終メッセージが戻り値そのものとなる。調査結果の要約に続けて、以下の構造化データを返す：
 
 ```json
 {
