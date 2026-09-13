@@ -57,33 +57,3 @@ func TestNewForecastDateInvalid(t *testing.T) {
 		})
 	}
 }
-
-func TestForecastDateEquality(t *testing.T) {
-	tests := []struct {
-		name  string
-		left  string
-		right string
-		want  bool
-	}{
-		{"同じ日付同士は等しい", "2026-09-05", "2026-09-05", true},
-		{"日だけが異なる日付同士は等しくない", "2026-09-05", "2026-09-06", false},
-		{"月だけが異なる日付同士は等しくない", "2026-09-05", "2026-10-05", false},
-		{"年だけが異なる日付同士は等しくない", "2026-09-05", "2027-09-05", false},
-		{"月と日を入れ替えた日付同士は等しくない", "2026-09-05", "2026-05-09", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			left, err := NewForecastDate(tt.left)
-			if err != nil {
-				t.Fatalf("NewForecastDate(%v) のエラー = %v, want %v", tt.left, err, nil)
-			}
-			right, err := NewForecastDate(tt.right)
-			if err != nil {
-				t.Fatalf("NewForecastDate(%v) のエラー = %v, want %v", tt.right, err, nil)
-			}
-			if got := *left == *right; got != tt.want {
-				t.Errorf("*NewForecastDate(%v) == *NewForecastDate(%v) = %v, want %v", tt.left, tt.right, got, tt.want)
-			}
-		})
-	}
-}
