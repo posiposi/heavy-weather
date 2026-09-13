@@ -1,14 +1,14 @@
 ---
 name: implement
 description: GitHub IssueからPR作成までの開発ワークフローを実行する。Issue番号を引数として受け取り、仕様取得→調査→タスク分解→TDD実装→レビュー→コミット→PR作成を一気通貫で行う。「Issue #N を実装して」「#N をやって」のように指示された場合に使用する。
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, Agent, WebFetch, TaskCreate, TaskUpdate, TaskList, TaskGet
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, Agent, WebFetch
 user-invocable: true
 ---
 
 # 概要
 
 引数で受け取ったGitHub Issue番号（以下 `<Issue番号>`）の仕様に基づき、以下のフェーズを順番に実行する。
-各フェーズ間の情報連携はClaude CodeのTasks機能を使用する。
+各フェーズ間の情報連携はメインコンテキストが担う。サブエージェントへは必要な情報を起動時の prompt に本文として渡し、結果はエージェントの戻り値で受け取る。
 
 ## Phase 0: 前提確認とブランチ作成
 
@@ -36,9 +36,7 @@ Issue 管理がまだ運用されていない場合は、Phase 1 の代わりに
    gh issue view <Issue番号> --json title,body,labels,comments
    ```
 2. Issueのタイトル、本文、ラベル、コメントを収集する
-3. TaskCreateで「仕様取得」タスクを作成する
-   - subject: `Issue #<Issue番号> の仕様取得`
-   - metadataにIssue仕様を格納する
+3. 収集した仕様はメインコンテキストで保持し、後続フェーズでサブエージェントを起動する際に prompt へ本文として埋め込む
 
 ## Phase 2: 調査・タスク分解
 
@@ -51,11 +49,11 @@ Issue 管理がまだ運用されていない場合は、Phase 1 の代わりに
 | `code-investigator` | Issue仕様に関連する既存コード・パターン・影響範囲を調査 |
 | `log-investigator` | エラーログ・テスト結果・環境情報を調査（バグ修正Issue時） |
 
-各サブエージェントには仕様取得タスクIDと自身のタスクIDを渡す。
+各サブエージェントの prompt には Phase 1 で取得した Issue 仕様（タイトル・本文・ラベル・関連コメント）を本文として含める。
 
 ### Phase 2-2: タスク分解
 
-調査完了後、`task-decomposer`エージェントを起動し、1コミット粒度の実装タスクを作成する。
+調査完了後、`task-decomposer`エージェントを起動し、1コミット粒度の実装タスクを作成する。prompt には Issue 仕様と Phase 2-1 の各調査結果を本文として含める。分解結果はエージェントの戻り値で受け取り、メインコンテキストで保持する。
 
 ## Phase 3: 実装
 
@@ -135,8 +133,10 @@ Issue 管理がまだ運用されていない場合は、Phase 1 の代わりに
 
 指摘が出た場合は以下を行う。
 
-1. **各指摘の採否を判断する。すべてを機械的に受け入れない。** Issue のスコープ外へ踏み出す提案、`CLAUDE.md` の方針（実装の原則・コメント方針・アーキテクチャ上の不変条件）や `.claude/rules/` と衝突する提案は採らない。採らない指摘については、その理由をユーザーに説明する
-2. 採用する指摘を修正する
+1. **各指摘の採否をメインコンテキストが判断する。すべてを機械的に受け入れない。** Issue のスコープ外へ踏み出す提案、`CLAUDE.md` の方針（実装の原則・コメント方針・アーキテクチャ上の不変条件）や `.claude/rules/` と衝突する提案は採らない。採らない指摘については、その理由をユーザーに説明する
+2. **採用する指摘の修正は `implementer` に指示する。メインコンテキストが直接コードを書き換えない。** 修正も Phase 3-1 と同じく TDD で行う
+   - 指摘が振る舞いの誤りや不足（境界値の取りこぼし、エラー時の挙動など）であれば、まず**その指摘を再現するテストの追加・修正と RED 確認**までを指示し、次の起動で**修正の実装と GREEN 確認**を指示する。テスト作成と実装を同じ指示に含めない
+   - 指摘が振る舞いを変えないもの（命名、重複の整理、コメントの削除など）であれば、既存テストが GREEN のままであることの確認までを指示する
 3. 修正後、テスト・lint・ビルドを再実行して通ることを確認する
 4. 修正内容と、採否の判断をユーザーに提示する
 5. `/commit-commands:commit` でコミットする
@@ -147,17 +147,29 @@ Issue 管理がまだ運用されていない場合は、Phase 1 の代わりに
 
 全タスク完了後（Phase 0 で git リポジトリ・リモートの存在を確認できている場合のみ）：
 
-1. `/commit-commands:commit-push-pr` でPRを作成する
+1. `/commit-commands:commit-push-pr` を実行する。未コミット分のコミット・push・`gh pr create` による PR 作成と、**PR 本文の作成までを同スキルに委ねる**。本文をこちらで組み立ててから渡さない
+2. 作成された PR を確認し、同スキルが作る本文では表現されない情報があれば、作成後に本文を更新する。対象は以下に限る
+   - Issue #`<Issue番号>` との対応（`Closes #<Issue番号>` 等）
+   - Phase 3-1 で Issue の記述と異なる設計判断を採った場合の、その内容と理由
+   - Phase 3-3 で採らなかったレビュー指摘と、その理由
+
+   ```bash
+   gh api -X PATCH repos/{owner}/{repo}/pulls/<PR番号> -f body="$(cat <<'EOF'
+   <更新後の本文全文>
+   EOF
+   )"
+   ```
 
 リモートリポジトリが存在しない場合は PR 作成を行わず、ローカルコミットまでで停止してユーザーに報告する。
 
 ## 注意事項
 
-- 各フェーズの結果はTasks機能のmetadataで連携する
+- サブエージェントへの情報連携は起動時の prompt に本文として埋め込む。タスクIDのような参照だけを渡さない
+- **PR 本文の更新（`gh api -X PATCH`）は `/commit-commands:commit-push-pr` の実行が完了した後に、メインコンテキストから実行する。** 同スキルの `allowed-tools` は `gh pr create` までで本文更新のコマンドを含まず、また「指示されたツール呼び出し以外を行わない」制約があるため、スキルの内側で実行させようとすると失敗する
 - テスト・lint・ビルドは `docker compose` の `app` コンテナ内で実行する（ホストに Go を入れない構成）
   - 起動: `cp .env.example .env && docker compose up -d`
   - テスト: `docker compose exec app go test ./...` — 詳細は `tdd-workflow` スキル
-  - lint: `docker compose exec app gofmt -w .` → `docker compose exec app go vet ./...` — 詳細は `linter-execute` スキル
+  - lint: `docker compose exec app gofmt -w .` → `docker compose exec app go vet ./...`
   - ビルド: `docker compose exec app go build ./...`。Lambda 向けバイナリのビルドは `cmd/` を追加する第2段階以降
 - `Makefile` はまだ整備されていない。存在を確認せずにラッパーコマンドを実行しない
 - 設計上の判断に迷う場合は `documents/heavy-weather-architecture.md`（唯一の真実の源）と `CLAUDE.md` を参照する。`documents/` は Git 管理外のため手元に存在しないことがあり、その場合は判断を進めずユーザーに確認する

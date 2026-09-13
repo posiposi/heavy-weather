@@ -2,7 +2,7 @@
 name: tdd-workflow
 description: テスト駆動開発（TDD）のワークフロー定義。テスト実行は docker compose の app コンテナ内（go test）で行う。Red→Green→Refactorのサイクル手順、テストの書き方、層別テスト方針との統合方法を定義する。テスト実装・実行時に使用する。
 user-invocable: false
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, TaskUpdate, TaskGet, TaskList
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # TDDワークフロースキル
